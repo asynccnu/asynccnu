@@ -1,0 +1,1146 @@
+swagger: "2.0"
+info:
+  title: "CCNU BOX"
+  version: "2.0"
+  description: "API document for CCNU BOX."
+  contact:
+    email: "muxistudio@qq.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "ccnubox.muxixyz.com"
+basePath: "/api"
+tags:
+  - name: table
+    description: 课表
+  - name: grade
+    description: 成绩
+  - name: ele
+    description: 电费
+  - name: library
+    description: 图书馆
+  - name: card
+    description: 校园卡
+  - name: product
+    description: 产品
+  - name: ios_config
+    description: iOS配置
+  - name: banner
+    description: Banner配置
+  - name: calendar
+    description: 安卓端日历配置
+  - name: start
+    description: 闪屏
+  - name: app
+    description: 版本信息
+  - name: msg
+    description: 提示信息
+  - name: feedback
+    description: 用户反馈
+  - name: userInfo
+    description: 用户产生的信息
+
+schemes:
+  - "https"
+  - "http"
+
+paths:
+  /table/v2/:
+    get:
+      tags:
+        - "table"
+      summary: ""
+      parameters:
+        - in: "header"
+          name: "Authorization"
+          description: "Basic Auth"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            properties:
+              table:
+                type: "array"
+                items:
+                  $ref: "#/definitions/TableInfo"
+    post:
+      tags:
+        - "table"
+      summary: ""
+      parameters:
+        - in: "header"
+          name: "Authorization"
+          description: "Basic Auth"
+          required: true
+          type: "string"
+        - in: "body"
+          name: "data"
+          required: true
+          schema:
+            $ref: "#/definitions/PostTable"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            properties:
+              id:
+                type: "string"
+                example: "5e36d4b8baff5c52ee5ee631"
+    delete:
+      tags:
+        - "table"
+      summary: ""
+      parameters:
+        - in: "header"
+          name: "Authorization"
+          description: "Basic Auth"
+          required: true
+          type: "string"
+        - in: "query"
+          name: "id"
+          description: "course id"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "OK"
+
+  /grade/v2:
+    get:
+      tags:
+        - "grade"
+      summary: ""
+      parameters:
+        - in: "header"
+          name: "Authorization"
+          description: "Basic Auth"
+          required: true
+          type: "string"
+        - in: "query"
+          name: "xnm"
+          description: "学年名"
+          required: false
+          type: "string"
+        - in: "query"
+          name: "xqm"
+          description: "学期名"
+          required: false
+          type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            properties:
+              data:
+                type: "array"
+                items:
+                  $ref: "#/definitions/GradeItem"
+
+  /ele:
+    get:
+      tags:
+        - ele
+      summary: "查询电费"
+      parameters:
+        - in: query
+          name: type
+          required: true
+          description: "类型"
+          type: string
+      responses:
+        200:
+          description: "OK"
+
+  /lib/search/:
+    get:
+      tags:
+        - library
+      summary: ""
+      parameters:
+        - in: query
+          name: keyword
+          type: string
+          required: true
+        - in: query
+          name: page
+          type: integer
+          required: false
+          description: 页码，默认为1
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/BookInfo"
+
+  /lib/detail/{id}/:
+    get:
+      tags:
+        - library
+      summary: "某本书的信息"
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          description: "book id"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: object
+            properties:
+              bid:
+                type: string
+                description: "作用未知，待补充"
+              book:
+                type: string
+                description: "书名"
+              author:
+                type: string
+              intro:
+                type: string
+                description: "介绍，来源为豆瓣API，可能为空"
+              books:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      description: "状态, 一个enum，可能有值有 [可借|借出|无法借阅|保留本|正在上架|不可借阅] 如果这本书在订购中或者处理中可能还有更多的值，客户端可以default处理为不可借状态"
+                    room:
+                      type: string
+                      description: "图书未知"
+                      example: "5F__中文图书借阅室(五)"
+                    tid:
+                      type: string
+                    bid:
+                      type: string
+                    date:
+                      type: string
+                      description: "若status为借出，date为归还日期，否则为空字符串"
+                      example: "2018-01-01"
+  /lib/renew/:
+    post:
+      tags:
+      - library
+      summary: "续借图书"
+      parameters:
+      - in: body
+        name: data
+        required: true
+        schema:
+          type: object
+          properties:
+            bar_code:
+              type: string
+            check:
+              type: string
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: object
+            properties:
+              msg:
+                type: string
+        406:
+          description: "时间太早不能续借"
+        403:
+          description: "超过最大续借次数"
+        400:
+          description: "其它原因无法续借"
+
+  /lib/me/:
+    get:
+      tags:
+        - library
+      summary: "查看我的图书"
+      parameters:
+        - in: header
+          name: s
+          required: true
+          type: string
+          description: "Phpsessid，实际含义待补充"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                book:
+                  type: string
+                author:
+                  type: string
+                itime:
+                  type: string
+                  description: "借的时间"
+                otime:
+                  type: string
+                  description: "归还时间"
+                time:
+                  type: integer
+                room:
+                  type: string
+                bar_code:
+                  type: string
+                check:
+                  type: string
+                id:
+                  type: string
+        401:
+          description: "Cookie 失效"
+
+  /lib/create/:
+    post:
+      tags:
+        - library
+      parameters:
+        - in: header
+          name: sid
+          type: string
+          required: true
+          description: "学号"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: object
+            properties:
+              book:
+                type: string
+              author:
+                type: string
+              bid:
+                type: string
+                description: "对应返回的 bid"
+              book_id:
+                type: string
+
+  /lib/attention/:
+    get:
+      tags:
+        - library
+      parameters:
+        - in: header
+          name: sid
+          required: true
+          type: string
+          description: "学号"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: object
+            properties:
+              book:
+                type: string
+              author:
+                type: string
+              bid:
+                type: string
+                description: "对应返回的 bid"
+              id:
+                type: string
+              avb:
+                type: string
+                description: "y 或 n"
+
+  /lib/delete/:
+    delete:
+      tags:
+        - library
+      parameters:
+        - in: header
+          name: sid
+          required: true
+          type: string
+          description: "学号"
+        - in: body
+          name: data
+          required: true
+          schema:
+            properties:
+              id:
+                type: string
+                description: "book_id"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: object
+            properties:
+              msg:
+                type: string
+
+  /product/:
+    get:
+      tags:
+      - product
+      summary: 获取产品信息
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "获取产品信息成功"
+          schema:
+            $ref: '#/definitions/Products'
+
+  /apartment/:
+    get:
+      tags:
+      - apartment
+      summary: 获取部门信息
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ApartmentItem'
+
+  /site/:
+    get:
+      tags:
+      - site
+      summary: 获取站点信息
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                site:
+                  type: string
+                url:
+                  type: string
+
+  /ios/config/:
+    get:
+      tags:
+      - ios_config
+      summary: 获取ios config
+      responses:
+        200:
+          description: "ios config"
+          schema:
+            $ref: '#/definitions/iOS_config'
+
+    put:
+      tags:
+      - ios_config
+      summary: 更改 ios config
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: body
+        name: config
+        required: true
+        schema:
+          $ref: '#/definitions/iOS_config'
+
+      responses:
+        200:
+          description: ok
+
+  /ios/banner/:
+    get:
+      tags:
+      - banner
+      summary: 获取banner，包括 IOS 和 Android
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: '#/definitions/Banners'
+    put:
+      tags:
+      - banner
+      summary: 更改banner，包括 IOS 和 Android
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: body
+        name: bannerinfo
+        required: true
+        schema:
+          type: object
+          properties:
+            list:
+              type: array
+              items:
+                $ref: '#/definitions/Banner'
+      responses:
+        200:
+          description: ok
+
+  /calendar/:
+    get:
+      tags:
+      - calendar
+      summary: 获取校历，已合并到 config 中
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: '#/definitions/Calendar'
+    put:
+      tags:
+      - calendar
+      summary: 更新校历，已合并入 config 中
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: body
+        name: calendar
+        required: true
+        schema:
+          $ref: '#/definitions/Calendar'
+      responses:
+        200:
+          description: ok
+
+
+  /start/:
+    get:
+      tags:
+      - start
+      summary: 获取闪屏
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: '#/definitions/Start'
+    put:
+      tags:
+      - start
+      summary: 更新闪屏
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: body
+        name: body
+        schema:
+          $ref: '#/definitions/Start'
+      responses:
+        200:
+          description: ok
+
+    delete:
+      tags:
+      - start
+      summary: 删除闪屏
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      responses:
+        200:
+          description: ok
+
+  /app/:
+    get:
+      tags:
+      - app
+      summary: App get api
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: '#/definitions/Apps'
+    post:
+      tags:
+      - app
+      summary: App info post api
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/App'
+      responses:
+        201:
+          description: ok
+
+    delete:
+      tags:
+      - app
+      summary: app 删除版本信息
+      description: app 删除版本信息
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: body
+        name: app
+        required: true
+        schema:
+          type: object
+          properties:
+            version:
+              type: string
+              description: 版本信息
+      responses:
+        200:
+          description: OK
+
+  /app/latest/:
+    get:
+      tags:
+      - app
+      summary: latest app
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: '#/definitions/App'
+
+  /msg/:
+    get:
+      tags:
+      - msg
+      summary: 获取信息
+      parameters:
+      - in: query
+        name: os
+        required: true
+        description: 操作系统, android 或 ios
+        type: string
+      - in: query
+        name: page
+        required: true
+        description: 页面名
+        type: string
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: '#/definitions/Message'
+
+    post:
+      tags:
+      - msg
+      summary: 新建信息
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/Message'
+      responses:
+        201:
+          description: ok
+
+    put:
+      tags:
+      - msg
+      summary: 更改信息
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/Message'
+      responses:
+        201:
+          description: ok
+
+    delete:
+      tags:
+      - msg
+      summary: 删除信息
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: query
+        name: os
+        required: true
+        description: 操作系统, android 或 ios
+        type: string
+      - in: query
+        name: page
+        required: true
+        description: 页面名
+        type: string
+
+      responses:
+        200:
+          description: ok
+        404:
+          description: not found
+
+  /feedback/:
+    post:
+      tags:
+      - feedback
+      summary: 收集反馈
+      parameters:
+      - in: body
+        name: post body
+        schema:
+          $ref: '#/definitions/FeedBack'
+
+      responses:
+        201:
+          description: created
+
+    get:
+      tags:
+      - feedback
+      summary: 获取反馈
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        type: string
+        description: Basic Auth, Include admin username & admin password
+      - in: query
+        name: offset
+        description: 偏移量
+        type: integer
+      - in: query
+        name: limit
+        description: 数量
+        type: integer
+      responses:
+        200:
+          description: ok
+          schema:
+            $ref: '#/definitions/FeedBackList'
+
+
+  /userinfo/:
+    post:
+      tags:
+      - userInfo
+      summary: 收集用户产生的信息
+      parameters:
+      - in: body
+        name: post body
+        schema:
+          $ref: '#/definitions/Userinfo'
+      responses:
+        200:
+          description: "OK"
+
+    get:
+      tags:
+      - userInfo
+      summary: 获取用户产生的信息
+      parameters:
+      - in: query
+        name: sid
+        required: true
+        type: string
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: '#/definitions/Userinfo'
+
+  /userinfo/list/:
+    get:
+      tags:
+      - userInfo
+      summary: 批量获取用户产生的信息
+      parameters:
+      - in: query
+        name: success
+        type: string
+        description: success filter
+      - in: query
+        name: grade
+        type: string
+        description: grade filter
+      - in: query
+        name: offset
+        type: string
+      - in: query
+        name: limit
+        type: string
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: object
+            properties:
+              userinfos:
+                type: array
+                items:
+                  $ref: '#/definitions/Userinfo'
+
+definitions:
+  TableInfo:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+      course:
+        type: "string"
+      teacher:
+        type: "string"
+      place:
+        type: "string"
+      start:
+        type: "string"
+        description: "课程开始时间(start=3表示上午第三节课开始上)"
+      during:
+        type: "string"
+        description: "课程持续时间（during=2表示持续2节课"
+      day:
+        type: "string"
+        description: "上课星期"
+      source:
+        type: "string"
+        description: "课程来源"
+      weeks:
+        type: "array"
+        items:
+          type: "integer"
+        example: [1,2,3,4,5]
+      remind:
+        type: "boolean"
+      color:
+        type: "integer"
+
+  PostTable:
+    type: "object"
+    properties:
+      course:
+        type: "string"
+      teacher:
+        type: "string"
+      place:
+        type: "string"
+      start:
+        type: "string"
+        description: "课程开始时间(start=3表示上午第三节课开始上)"
+        example: "5"
+      during:
+        type: "string"
+        description: "课程持续时间（during=2表示持续2节课）"
+        example: "2"
+      day:
+        type: "string"
+        description: "上课星期"
+        example: "1"
+      weeks:
+        type: "array"
+        items:
+          type: "integer"
+        example: [1,2,3,4,5]
+
+  GradeItem:
+    type: "object"
+    properties:
+      course:
+        type: "string"
+      credit:
+        type: "string"
+        description: "学分"
+      grade:
+        type: "string"
+      category:
+        type: "string"
+        description: "课程类别名称"
+        example: "专业课"
+      type:
+        type: "string"
+        description: "课程归属名称"
+        example: "理"
+      kcxzmc:
+        type: "string"
+        description: "课程性质名称"
+        example: "专业主干课程"
+      xnm:
+        type: "string"
+        description: "学年名"
+        example: "2018"
+
+  BookInfo:
+    type: object
+    description: "书本信息"
+    properties:
+      book:
+        type: string
+        description: "书名"
+      author:
+        type: string
+      publisher:
+        type: string
+        description: "出版社"
+      bid:
+        type: string
+        description: "作用未知，待补充"
+      bookurl:
+        type: string
+      id:
+        type: string
+
+  Products:
+    type: object
+    description: "产品信息列表"
+    properties:
+      _product:
+        type: array
+        items:
+          $ref: '#/definitions/Product'
+      update:
+        type: string
+        description: "更新时间"
+
+  Product:
+    type: object
+    description: "产品信息"
+    properties:
+      name:
+        type: string
+        description: "产品名称"
+      icon:
+        type: string
+        description: "icon七牛外链"
+      url:
+        type: string
+        description: "产品URL"
+      intro:
+        type: string
+        description: "产品介绍"
+
+  iOS_config:
+    type: object
+    description: "ios config"
+    properties:
+      config:
+        type: object
+        description: "ios config"
+        properties:
+          calendarUrl:
+            type: string
+            description: "日历地址"
+          flashScreenUrl:
+            type: string
+            description: "闪屏地址"
+          showGuisheng:
+            type: boolean
+            description: "show guisheng(废弃)"
+          startCountDayPreset:
+            type: string
+            description: "版本发布日期（历史兼容）"
+          startCountDayPresetForV2:
+            type: string
+            description: "版本发布日期"
+          updateInfo:
+            type: string
+            description: "更新信息"
+          version:
+            type: string
+            description: "版本号"
+          shouldPullCourse:
+            type: boolean
+            description: "自动更新课程开关"
+          flashStartDay:
+            type: string
+            description: "闪屏显示开始日期"
+          flashEndDay:
+            type: string
+            description: "闪屏显示结束日期"
+          gradeJSUrl:
+            type: string
+            description: "废弃，历史兼容"
+          tableJSUrl:
+            type: string
+            description: "废弃，历史兼容"
+          rax:
+            type: object
+            description: "Rax 热更新"
+            properties:
+              key:
+                type: string
+                description: "Rax 包名"
+              version:
+                type: string
+                description: "版本号"
+              url:
+                type: string
+
+  Banners:
+    type: array
+    description: "banners"
+    items:
+      $ref: '#/definitions/Banner'
+
+  Banner:
+    type: object
+    properties:
+      img:
+        type: string
+        description: "Image URL"
+      url:
+        type: string
+        description: "website URL"
+      num:
+        type: integer
+        description: "rank"
+
+  Calendar:
+    type: object
+    properties:
+      img:
+        type: string
+        description: Image URL
+      size:
+        type: string
+        description: 格式为"100x100", 第一个为图片宽度，第二个为图片高度
+      update:
+        type: string
+        description: 更新时间，时间戳
+
+  Start:
+    type: object
+    properties:
+      img:
+        type: string
+        description: 闪屏图片七牛外链
+      url:
+        type: string
+        description: 图片指向的链接
+      update:
+        type: string
+        description: 更新时间，时间戳
+
+  App:
+    type: object
+    properties:
+      name:
+        type: string
+        description: App名字
+      update:
+        type: string
+        description: 更新时间
+      version:
+        type: string
+        description: 版本
+      download:
+        type: string
+        description: 下载链接
+      intro:
+        type: string
+        description: 介绍
+      size:
+        type: string
+        description: 安装包大小
+
+  Apps:
+    type: array
+    items:
+      $ref: '#/definitions/App'
+
+  Message:
+    type: object
+    properties:
+      os:
+        description: 操作系统, android 或 ios
+        type: string
+      page:
+        description: 页面名
+        type: string
+      msg:
+        type: string
+        description: 信息, string
+      detail:
+        type: string
+        description: 详细信息
+      time:
+        type: string
+        description: 格式2018-01-01
+      version:
+        type: string
+        description: 版本号
+
+  Userinfo:
+    type: object
+    properties:
+      sid:
+        type: string
+      userinfo:
+        type: string
+      success:
+        type: boolean
+
+  FeedBack:
+    type: object
+    properties:
+      contact:
+        type: string
+        description: 联系方式
+      content:
+        type: string
+        description: 内容
+      timestamp:
+        type: integer
+        format: int64
+        description: 时间戳
+
+  FeedBackList:
+    type: object
+    properties:
+      totalCount:
+        type: integer
+        format: int64
+        description: 反馈总数
+      feedbacks:
+        type: array
+        items:
+          $ref: '#/definitions/FeedBack'
+
+  ApartmentItem:
+    type: object
+    properties:
+      apartment:
+        type: string
+      phone:
+        type: array
+        items:
+          type: string
+      place:
+        type: string
